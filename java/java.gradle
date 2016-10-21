@@ -22,21 +22,12 @@ sourceSets {
 }
 
 jar {
-    description = 'Generates NetworkTables jar, with the JNI shared libraries embedded'
+    description = 'Generates Impl jar, with the JNI shared libraries embedded'
     baseName = 'ntcore'
     classifier = "$buildPlatform"
     duplicatesStrategy = 'exclude'
 
     dependsOn { classes }
-    model {
-        binaries {
-            withType(SharedLibraryBinarySpec) { binary ->
-                from(file(binary.sharedLibraryFile)) {
-                    into getPlatformPath(binary)
-                }
-            }
-        }
-    }
 }
 
 project.tasks.whenTaskAdded { task ->
@@ -48,8 +39,8 @@ project.tasks.whenTaskAdded { task ->
     }
 }
 
-task networktablesJavaSource(type: Jar, dependsOn: classes) {
-    description = 'Generates the source jar for NetworkTables java'
+task ImplJavaSource(type: Jar, dependsOn: classes) {
+    description = 'Generates the source jar for Impl java'
     group = 'WPILib'
     baseName = 'ntcore'
     classifier = "sources"
@@ -58,8 +49,8 @@ task networktablesJavaSource(type: Jar, dependsOn: classes) {
     from sourceSets.main.allJava
 }
 
-task networktablesJavadoc(type: Jar, dependsOn: javadoc) {
-    description = 'Generates the javadoc jar for NetworkTables java'
+task ImplJavadoc(type: Jar, dependsOn: javadoc) {
+    description = 'Generates the javadoc jar for Impl java'
     group = 'WPILib'
     baseName = 'ntcore'
     classifier = "javadoc"
@@ -68,14 +59,14 @@ task networktablesJavadoc(type: Jar, dependsOn: javadoc) {
     from javadoc.destinationDir
 }
 
-build.dependsOn networktablesJavaSource
-build.dependsOn networktablesJavadoc
+build.dependsOn ImplJavaSource
+build.dependsOn ImplJavadoc
 
 /**
  * Generates the JNI headers
  */
-task jniHeadersNetworkTables {
-    description = 'Generates JNI headers from edu.wpi.first.wpilibj.networktables.*'
+task jniHeadersImpl {
+    description = 'Generates JNI headers from edu.wpi.first.wpilibj.Impl.*'
     group = 'WPILib'
     def outputFolder = file(generatedJNIHeaderLoc)
     inputs.files sourceSets.main.output
@@ -86,7 +77,7 @@ task jniHeadersNetworkTables {
             executable org.gradle.internal.jvm.Jvm.current().getExecutable('javah')
             args '-d', outputFolder
             args '-classpath', sourceSets.main.output.classesDir
-            args 'edu.wpi.first.wpilibj.networktables.NetworkTablesJNI'
+            args 'com.ctre.CanTalonJNI'
         }
     }
 }
@@ -138,7 +129,7 @@ ext.setupJniIncludes = { binaries ->
                 }
             }
 
-            jniHeadersNetworkTables.outputs.files.each { file ->
+            jniHeadersImpl.outputs.files.each { file ->
                 if (buildPlatform == 'arm') {
                     cppCompiler.args '-I', file.getPath()
                 } else {
@@ -146,7 +137,7 @@ ext.setupJniIncludes = { binaries ->
                 }
             }
 
-            dependsOn jniHeadersNetworkTables
+            dependsOn jniHeadersImpl
         }
     }
 }

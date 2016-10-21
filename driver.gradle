@@ -12,7 +12,7 @@ def driverSetupModel = { project ->
                 
                 def libPattern = /.*((\\/|\\).*)+lib(?<libName>.+).so$/
                 def niLibraryArgs = []
-                def niLibraryPath = file('libraries/driver').path
+                def niLibraryPath = file('libraries').path
 
                 // The NI Library tree includes all non-wpi libraries, which is everything that doesn't have libwpi in the name
                 def niLibraryTree = fileTree(niLibraryPath)
@@ -39,7 +39,7 @@ def driverSetupModel = { project ->
                             includes = ['**/*.cpp']
                         }
                         exportedHeaders {
-                            srcDirs = ["${rootDir}/driver/include", "${rootDir}/libraries/driver/include"]
+                            srcDirs = ["${rootDir}/driver/include", "${rootDir}/libraries/include"]
                             includes = ['**/*.h']
                         }
                     }

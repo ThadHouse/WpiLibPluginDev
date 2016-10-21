@@ -12,7 +12,7 @@ def implSetupModel = { project ->
                 
                 def libPattern = /.*((\\/|\\).*)+lib(?<libName>.+).so$/
                 def niLibraryArgs = []
-                def niLibraryPath = file('libraries/impl').path
+                def niLibraryPath = file('libraries').path
 
                 // The NI Library tree includes all non-wpi libraries, which is everything that doesn't have libwpi in the name
                 def niLibraryTree = fileTree(niLibraryPath)
@@ -53,9 +53,9 @@ def implSetupModel = { project ->
                             includes = ['**/*.cpp']
                         }
                         exportedHeaders {
-                            srcDirs = ["${rootDir}/include", "${rootDir}/libraries/impl/include"]
+                            srcDirs = ["${rootDir}/include", "${rootDir}/libraries/include"]
                             if (includeJava) {
-                                project.jniHeadersNetworkTables.outputs.files.each { file ->
+                                project.jniHeadersImpl.outputs.files.each { file ->
                                     srcDirs file.getPath()
                                 }
                             }
@@ -87,7 +87,7 @@ def implZipTask = { project ->
         }
 
         if (!project.hasProperty('skipJava')) {
-            project.jniHeadersNetworkTables.outputs.each {
+            project.jniHeadersImpl.outputs.each {
                 from(it) {
                     into 'include'
                 }
@@ -147,10 +147,6 @@ project(':native:impl') {
 
     apply from: "${rootDir}/toolchains/native.gradle"
 
-    if (!project.hasProperty("withoutTests")) {
-        apply from: "${rootDir}/test/tests.gradle"
-    }
-
     if (includeJava) {
         apply from: "${rootDir}/java/java.gradle"
     }
@@ -180,7 +176,7 @@ task implSourceZip(type: Zip) {
             into 'src'
         }
 
-        project(':native:impl').jniHeadersNetworkTables.outputs.each {
+        project(':native:impl').jniHeadersImpl.outputs.each {
             from(it) {
                 into 'include'
             }
