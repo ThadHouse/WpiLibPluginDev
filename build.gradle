@@ -64,16 +64,16 @@ ext.setupDefines = { project, binaries ->
 }
 
 apply from: "ntcore.gradle"
-apply from: "wpiutil.gradle"
+apply from: "driver.gradle"
 
-// Empty task for build so that ntcoreSourceZip and wpiutilSourceZip will be
+// Empty task for build so that ntcoreSourceZip and driverSourceZip will be
 // built when running ./gradlew build
 task build
 
 build.dependsOn ntcoreSourceZip
-build.dependsOn wpiutilSourceZip
+build.dependsOn driverSourceZip
 
-apply from: 'publish.gradle'
+//apply from: 'publish.gradle'
 
 task wrapper(type: Wrapper) {
     gradleVersion = '3.0'

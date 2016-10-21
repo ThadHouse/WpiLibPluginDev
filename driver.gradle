@@ -1,7 +1,7 @@
-def wpiutilSetupModel = { project ->
+def driverSetupModel = { project ->
     project.model {
         components {
-            wpiutil(NativeLibrarySpec) {
+            driver(NativeLibrarySpec) {
                 if (project.isArm) {
                     targetPlatform 'arm'
                 } else {
@@ -13,11 +13,11 @@ def wpiutilSetupModel = { project ->
                 sources {
                     cpp {
                         source {
-                            srcDirs = ["${rootDir}/wpiutil/src"]
+                            srcDirs = ["${rootDir}/driver/src"]
                             includes = ['**/*.cpp']
                         }
                         exportedHeaders {
-                            srcDirs = ["${rootDir}/wpiutil/include"]
+                            srcDirs = ["${rootDir}/driver/include"]
                             includes = ['**/*.h']
                         }
                     }
@@ -28,16 +28,16 @@ def wpiutilSetupModel = { project ->
 }
 
 
-def wpiutilZipTask = { project ->
-    project.ext.wpiutilZip = project.tasks.create("${project.isArm ? 'arm' : 'native'}WpiutilZip", Zip) {
-        description = 'Creates platform-specific zip of the desktop wpiutil libraries.'
+def driverZipTask = { project ->
+    project.ext.driverZip = project.tasks.create("${project.isArm ? 'arm' : 'native'}driverZip", Zip) {
+        description = 'Creates platform-specific zip of the desktop driver libraries.'
         group = 'WPILib'
         destinationDir = project.buildDir
-        baseName = 'wpiutil'
+        baseName = 'driver'
         classifier = "${project.buildPlatform}"
         duplicatesStrategy = 'exclude'
 
-        from(file('wpiutil/include')) {
+        from(file('driver/include')) {
             into 'include'
         }
 
@@ -57,57 +57,57 @@ def wpiutilZipTask = { project ->
         }
     }
 
-    project.build.dependsOn project.wpiutilZip
+    project.build.dependsOn project.driverZip
 
-    def releaseTasks = [project.wpiutilZip]
+    def releaseTasks = [project.driverZip]
 
     project.releaseSetup(releaseTasks)
 
     project.tasks.whenTaskAdded { task ->
         def name = task.name.toLowerCase()
-        if (name.contains("wpiutilsharedlibrary") || name.contains("wpiutilstaticlibrary") || name.contains("wpiutiltest")) {
-            project.wpiutilZip.dependsOn task
+        if (name.contains("driversharedlibrary") || name.contains("driverstaticlibrary") || name.contains("drivertest")) {
+            project.driverZip.dependsOn task
         }
     }
 }
 
 if (buildArm) {
-    project(':arm:wpiutil') {
+    project(':arm:driver') {
         apply plugin: 'cpp'
 
         apply from: "${rootDir}/toolchains/arm.gradle"
 
-        wpiutilSetupModel(project)
-        wpiutilZipTask(project)
+        driverSetupModel(project)
+        driverZipTask(project)
     }
 }
 
-project(':native:wpiutil') {
+project(':native:driver') {
     apply plugin: 'cpp'
 
     apply from: "${rootDir}/toolchains/native.gradle"
 
     if (!project.hasProperty("withoutTests")) {
-        apply from: "${rootDir}/wpiutil/unittest/unittest.gradle"
+        apply from: "${rootDir}/driver/unittest/unittest.gradle"
     }
 
-    wpiutilSetupModel(project)
-    wpiutilZipTask(project)
+    driverSetupModel(project)
+    driverZipTask(project)
 }
 
-task wpiutilSourceZip(type: Zip) {
-    description = 'Creates a sources-zip of the wpiutil source files'
+task driverSourceZip(type: Zip) {
+    description = 'Creates a sources-zip of the driver source files'
     group = 'WPILib'
     destinationDir = project.buildDir
-    baseName = 'wpiutil'
+    baseName = 'driver'
     classifier = "sources"
     duplicatesStrategy = 'exclude'
 
-    from('wpiutil/src') {
+    from('driver/src') {
         into 'src'
     }
 
-    from('wpiutil/include') {
+    from('driver/include') {
         into 'include'
     }
 }

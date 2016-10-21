@@ -40,9 +40,9 @@ def ntcoreSetupModel = { project ->
                             includes = ['**/*.h']
                         }
                         if (project.isArm) {
-                            lib project: ':arm:wpiutil', library: 'wpiutil', linkage: 'static'
+                            lib project: ':arm:driver', library: 'driver', linkage: 'static'
                         } else {
-                            lib project: ':native:wpiutil', library: 'wpiutil', linkage: 'static'
+                            lib project: ':native:driver', library: 'driver', linkage: 'static'
                         }
                     }
                 }

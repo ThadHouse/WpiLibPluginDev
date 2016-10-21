@@ -8,14 +8,9 @@
 #include <thread>
 
 #include "edu_wpi_first_wpilibj_networktables_NetworkTablesJNI.h"
-#include "support/atomic_static.h"
-#include "support/jni_util.h"
-#include "support/SafeThread.h"
-#include "llvm/ConvertUTF.h"
-#include "llvm/SmallString.h"
-#include "llvm/SmallVector.h"
 
-using namespace wpi::java;
+
+//using namespace wpi::java;
 
 //
 // Globals and load/unload
@@ -135,6 +130,7 @@ JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved) {
 
 }  // extern "C"
 
+/*
 //
 // Helper class to create and clean up a global reference
 //
@@ -197,3 +193,4 @@ class JWeakGlobal {
  private:
   T m_obj;
 };
+*/
