@@ -9,6 +9,28 @@ def ntcoreSetupModel = { project ->
                     targetPlatform 'x64'
                 }
                 setupDefines(project, binaries)
+                
+                def libPattern = /.*((\\/|\\).*)+lib(?<libName>.+).so$/
+                def niLibraryArgs = []
+                def niLibraryPath = file('libraries/impl').path
+
+                // The NI Library tree includes all non-wpi libraries, which is everything that doesn't have libwpi in the name
+                def niLibraryTree = fileTree(niLibraryPath)
+                niLibraryTree.include '*.so'
+                niLibraryTree.exclude '*wpi*.so'
+                
+                // This adds all linker flags to the list of ni library linker flags
+                niLibraryTree.each { lib ->
+                    def nameMatcher = (lib.path =~ libPattern)
+                    if (nameMatcher[0].size() > 1) {
+                        def name = nameMatcher.group('libName')
+                        niLibraryArgs << '-l' + name
+                    }
+                }
+                
+                tasks.withType(CppCompile) {
+                    addLinks(project, binaries, linker, targetPlatform, niLibraryPath, niLibraryArgs)
+                }
 
                 if (includeJava) {
                     project.setupJniIncludes(binaries)
@@ -31,7 +53,7 @@ def ntcoreSetupModel = { project ->
                             includes = ['**/*.cpp']
                         }
                         exportedHeaders {
-                            srcDirs = ["${rootDir}/include"]
+                            srcDirs = ["${rootDir}/include", "${rootDir}/libraries/impl/include"]
                             if (includeJava) {
                                 project.jniHeadersNetworkTables.outputs.files.each { file ->
                                     srcDirs file.getPath()

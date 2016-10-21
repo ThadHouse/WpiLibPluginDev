@@ -111,10 +111,6 @@ project(':native:driver') {
 
     apply from: "${rootDir}/toolchains/native.gradle"
 
-    if (!project.hasProperty("withoutTests")) {
-        apply from: "${rootDir}/driver/unittest/unittest.gradle"
-    }
-
     driverSetupModel(project)
     driverZipTask(project)
 }
