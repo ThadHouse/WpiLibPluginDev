@@ -63,6 +63,12 @@ ext.setupDefines = { project, binaries ->
     }
 }
 
+ext.addLinks = { project, binaries, linker, targetPlatform, path, args ->
+            binaries.all {
+            project.addLibraryLinks(linker, targetPlatform, path,args)
+        }
+        }
+
 apply from: "ntcore.gradle"
 apply from: "driver.gradle"
 

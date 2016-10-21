@@ -74,6 +74,14 @@ ext.setupDebugDefines = { cppCompiler, linker ->
     cppCompiler.args '-g', '-O0'
 }
 
+ext.addLibraryLinks = { linker, targetPlatform, path, args ->
+            String architecture = targetPlatform.architecture
+            if (architecture.contains('arm')){
+                linker.args << '-L' + path
+                linker.args.addAll(ars)
+            }
+        }
+
 // Used only on Windows.
 ext.setupDef = { linker, deffile -> }
 
