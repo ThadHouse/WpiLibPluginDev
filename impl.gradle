@@ -1,7 +1,7 @@
-def ntcoreSetupModel = { project ->
+def implSetupModel = { project ->
     project.model {
         components {
-            ntcore(NativeLibrarySpec) {
+            impl(NativeLibrarySpec) {
                 if (project.isArm) {
                     targetPlatform 'arm'
                 } else {
@@ -35,11 +35,11 @@ def ntcoreSetupModel = { project ->
                 if (includeJava) {
                     project.setupJniIncludes(binaries)
                     binaries.all {
-                        project.setupDef(linker, "${rootDir}/ntcore-jni.def")
+                        project.setupDef(linker, "${rootDir}/impl-jni.def")
                     }
                 } else {
                     binaries.all {
-                        project.setupDef(linker, "${rootDir}/ntcore.def")
+                        project.setupDef(linker, "${rootDir}/impl.def")
                     }
                 }
 
@@ -73,12 +73,12 @@ def ntcoreSetupModel = { project ->
     }
 }
 
-def ntcoreZipTask = { project ->
-    project.ext.ntcoreZip = project.tasks.create("${project.isArm ? 'arm' : 'native'}NtcoreZip", Zip) {
-        description = 'Creates platform-specific zip of the desktop ntcore libraries.'
+def implZipTask = { project ->
+    project.ext.implZip = project.tasks.create("${project.isArm ? 'arm' : 'native'}implZip", Zip) {
+        description = 'Creates platform-specific zip of the desktop impl libraries.'
         group = 'WPILib'
         destinationDir = project.buildDir
-        baseName = 'ntcore'
+        baseName = 'impl'
         classifier = "${project.buildPlatform}"
         duplicatesStrategy = 'exclude'
 
@@ -110,9 +110,9 @@ def ntcoreZipTask = { project ->
         }
     }
 
-    project.build.dependsOn project.ntcoreZip
+    project.build.dependsOn project.implZip
 
-    def releaseTasks = [project.ntcoreZip]
+    def releaseTasks = [project.implZip]
 
     if (includeJava) {
         releaseTasks.add(project.jar)
@@ -122,14 +122,14 @@ def ntcoreZipTask = { project ->
 
     project.tasks.whenTaskAdded { task ->
         def name = task.name.toLowerCase()
-        if (name.contains("ntcoresharedlibrary") || name.contains("ntcorestaticlibrary") || name.contains("ntcoretest")) {
-            project.ntcoreZip.dependsOn task
+        if (name.contains("implsharedlibrary") || name.contains("implstaticlibrary") || name.contains("impltest")) {
+            project.implZip.dependsOn task
         }
     }
 }
 
 if (buildArm) {
-    project(':arm:ntcore') {
+    project(':arm:impl') {
         apply plugin: 'cpp'
 
         apply from: "${rootDir}/toolchains/arm.gradle"
@@ -137,12 +137,12 @@ if (buildArm) {
             apply from: "${rootDir}/java/java.gradle"
         }
 
-        ntcoreSetupModel(project)
-        ntcoreZipTask(project)
+        implSetupModel(project)
+        implZipTask(project)
     }
 }
 
-project(':native:ntcore') {
+project(':native:impl') {
     apply plugin: 'cpp'
 
     apply from: "${rootDir}/toolchains/native.gradle"
@@ -155,15 +155,15 @@ project(':native:ntcore') {
         apply from: "${rootDir}/java/java.gradle"
     }
 
-    ntcoreSetupModel(project)
-    ntcoreZipTask(project)
+    implSetupModel(project)
+    implZipTask(project)
 }
 
-task ntcoreSourceZip(type: Zip) {
-    description = 'Creates a sources-zip of the ntcore source files'
+task implSourceZip(type: Zip) {
+    description = 'Creates a sources-zip of the impl source files'
     group = 'WPILib'
     destinationDir = project.buildDir
-    baseName = 'ntcore'
+    baseName = 'impl'
     classifier = "sources"
     duplicatesStrategy = 'exclude'
 
@@ -180,7 +180,7 @@ task ntcoreSourceZip(type: Zip) {
             into 'src'
         }
 
-        project(':native:ntcore').jniHeadersNetworkTables.outputs.each {
+        project(':native:impl').jniHeadersNetworkTables.outputs.each {
             from(it) {
                 into 'include'
             }

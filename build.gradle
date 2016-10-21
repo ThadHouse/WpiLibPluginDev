@@ -69,14 +69,14 @@ ext.addLinks = { project, binaries, linker, targetPlatform, path, args ->
         }
         }
 
-apply from: "ntcore.gradle"
+apply from: "impl.gradle"
 apply from: "driver.gradle"
 
 // Empty task for build so that ntcoreSourceZip and driverSourceZip will be
 // built when running ./gradlew build
 task build
 
-build.dependsOn ntcoreSourceZip
+build.dependsOn implSourceZip
 build.dependsOn driverSourceZip
 
 //apply from: 'publish.gradle'

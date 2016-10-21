@@ -1,8 +1,8 @@
-include 'native:ntcore'
+include 'native:impl'
 include 'native:driver'
 include 'gmock'
 
 if (!hasProperty('skipArm')) {
-    include 'arm:ntcore'
+    include 'arm:impl'
     include 'arm:driver'
 }
