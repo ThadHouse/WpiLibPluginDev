@@ -1,3 +1,3 @@
-include 'arm:impl'
-include 'arm:driver'
+include 'arm:$implreplace$'
+include 'arm:$drivereplace$'
 

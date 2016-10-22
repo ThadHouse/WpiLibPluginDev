@@ -1,9 +1,9 @@
 defineWpiLibProperties()
 
-def driverSetupModel = { project ->
+def $driverreplace$SetupModel = { project ->
     project.model {
         components {
-            driver(NativeLibrarySpec) {
+            $driverreplace$(NativeLibrarySpec) {
                 if (project.isArm) {
                     targetPlatform 'arm'
                 } else {
@@ -23,11 +23,11 @@ def driverSetupModel = { project ->
                 sources {
                     cpp {
                         source {
-                            srcDirs = ["${rootDir}/driver/src"]
+                            srcDirs = ["${rootDir}/$driverreplace$/src"]
                             includes = ["**/*.cpp"]
                         }
                         exportedHeaders {
-                            srcDirs = ["${rootDir}/driver/include", "${rootDir}/libraries/include", wpilibInclude]
+                            srcDirs = ["${rootDir}/$driverreplace$/include", "${rootDir}/libraries/include", wpilibInclude]
                             includes = ['**/*.h']
                         }
                     }
@@ -38,16 +38,16 @@ def driverSetupModel = { project ->
 }
 
 
-def driverZipTask = { project ->
-    project.ext.driverZip = project.tasks.create("${project.isArm ? 'arm' : 'native'}driverZip", Zip) {
-        description = 'Creates platform-specific zip of the desktop driver libraries.'
+def $driverreplace$ZipTask = { project ->
+    project.ext.$driverreplace$Zip = project.tasks.create("${project.isArm ? 'arm' : 'native'}$driverreplace$Zip", Zip) {
+        description = 'Creates platform-specific zip of the desktop $driverreplace$ libraries.'
         group = 'WPILib'
         destinationDir = project.buildDir
-        baseName = 'driver'
+        baseName = '$driverreplace$'
         classifier = "${project.buildPlatform}"
         duplicatesStrategy = 'exclude'
 
-        from(file('driver/include')) {
+        from(file('$driverreplace$/include')) {
             into 'include'
         }
 
@@ -67,42 +67,42 @@ def driverZipTask = { project ->
         }
     }
 
-    project.build.dependsOn project.driverZip
+    project.build.dependsOn project.$driverreplace$Zip
 
-    def releaseTasks = [project.driverZip]
+    def releaseTasks = [project.$driverreplace$Zip]
 
     project.releaseSetup(releaseTasks)
 
     project.tasks.whenTaskAdded { task ->
         def name = task.name.toLowerCase()
-        if (name.contains("driversharedlibrary") || name.contains("driverstaticlibrary") || name.contains("drivertest")) {
-            project.driverZip.dependsOn task
+        if (name.contains("$driverreplace$sharedlibrary") || name.contains("$driverreplace$staticlibrary")) {
+            project.$driverreplace$Zip.dependsOn task
         }
     }
 }
 
-project(':arm:driver') {
+project(':arm:$driverreplace$') {
   apply plugin: 'cpp'
 
   apply from: "${rootDir}/toolchains/arm.gradle"
 
-  driverSetupModel(project)
-  driverZipTask(project)
+  $driverreplace$SetupModel(project)
+  $driverreplace$ZipTask(project)
 }
 
-task driverSourceZip(type: Zip) {
-    description = 'Creates a sources-zip of the driver source files'
+task $driverreplace$SourceZip(type: Zip) {
+    description = 'Creates a sources-zip of the $driverreplace$ source files'
     group = 'WPILib'
     destinationDir = project.buildDir
-    baseName = 'driver'
+    baseName = '$driverreplace$'
     classifier = "sources"
     duplicatesStrategy = 'exclude'
 
-    from('driver/src') {
+    from('$driverreplace$/src') {
         into 'src'
     }
 
-    from('driver/include') {
+    from('$driverreplace$/include') {
         into 'include'
     }
 }

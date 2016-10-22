@@ -1,9 +1,9 @@
 defineWpiLibProperties()
 
-def implSetupModel = { project ->
+def $implreplace$SetupModel = { project ->
     project.model {
         components {
-            impl(NativeLibrarySpec) {
+            $implreplace$(NativeLibrarySpec) {
                 if (project.isArm) {
                     targetPlatform 'arm'
                 } else {
@@ -23,13 +23,6 @@ def implSetupModel = { project ->
 
                 if (includeJava) {
                     project.setupJniIncludes(binaries)
-                    binaries.all {
-                        project.setupDef(linker, "${rootDir}/impl-jni.def")
-                    }
-                } else {
-                    binaries.all {
-                        project.setupDef(linker, "${rootDir}/impl.def")
-                    }
                 }
 
                 sources {
@@ -44,16 +37,16 @@ def implSetupModel = { project ->
                         exportedHeaders {
                             srcDirs = ["${rootDir}/include", "${rootDir}/libraries/include", "${rootDir}/wpilib/include"]
                             if (includeJava) {
-                                project.jniHeadersImpl.outputs.files.each { file ->
+                                project.jniHeaders$implreplace$.outputs.files.each { file ->
                                     srcDirs file.getPath()
                                 }
                             }
                             includes = ['**/*.h']
                         }
                         if (project.isArm) {
-                            lib project: ':arm:driver', library: 'driver', linkage: 'static'
+                            lib project: ':arm:$driverreplace$', library: '$driverreplace$', linkage: 'static'
                         } else {
-                            lib project: ':native:driver', library: 'driver', linkage: 'static'
+                            lib project: ':native:$driverreplace$', library: '$driverreplace$', linkage: 'static'
                         }
                     }
                 }
@@ -62,12 +55,12 @@ def implSetupModel = { project ->
     }
 }
 
-def implZipTask = { project ->
-    project.ext.implZip = project.tasks.create("${project.isArm ? 'arm' : 'native'}implZip", Zip) {
-        description = 'Creates platform-specific zip of the desktop impl libraries.'
+def $implreplace$ZipTask = { project ->
+    project.ext.$implreplace$Zip = project.tasks.create("${project.isArm ? 'arm' : 'native'}$implreplace$Zip", Zip) {
+        description = 'Creates platform-specific zip of the desktop $implreplace$ libraries.'
         group = 'WPILib'
         destinationDir = project.buildDir
-        baseName = 'impl'
+        baseName = '$implreplace$'
         classifier = "${project.buildPlatform}"
         duplicatesStrategy = 'exclude'
 
@@ -76,7 +69,7 @@ def implZipTask = { project ->
         }
 
         if (!project.hasProperty('skipJava')) {
-            project.jniHeadersImpl.outputs.each {
+            project.jniHeaders$implreplace$.outputs.each {
                 from(it) {
                     into 'include'
                 }
@@ -99,9 +92,9 @@ def implZipTask = { project ->
         }
     }
 
-    project.build.dependsOn project.implZip
+    project.build.dependsOn project.$implreplace$Zip
 
-    def releaseTasks = [project.implZip]
+    def releaseTasks = [project.$implreplace$Zip]
 
     if (includeJava) {
         releaseTasks.add(project.jar)
@@ -111,13 +104,13 @@ def implZipTask = { project ->
 
     project.tasks.whenTaskAdded { task ->
         def name = task.name.toLowerCase()
-        if (name.contains("implsharedlibrary") || name.contains("implstaticlibrary") || name.contains("impltest")) {
-            project.implZip.dependsOn task
+        if (name.contains("$implreplace$sharedlibrary") || name.contains("$implreplace$staticlibrary")) {
+            project.$implreplace$Zip.dependsOn task
         }
     }
 }
 
-project(':arm:impl') {
+project(':arm:$implreplace$') {
   apply plugin: 'cpp'
 
   apply from: "${rootDir}/toolchains/arm.gradle"
@@ -125,15 +118,15 @@ project(':arm:impl') {
     apply from: "${rootDir}/java/java.gradle"
   }
 
-  implSetupModel(project)
-  implZipTask(project)
+  $implreplace$SetupModel(project)
+  $implreplace$ZipTask(project)
 }
 
-task implSourceZip(type: Zip) {
-    description = 'Creates a sources-zip of the impl source files'
+task $implreplace$SourceZip(type: Zip) {
+    description = 'Creates a sources-zip of the $implreplace$ source files'
     group = 'WPILib'
     destinationDir = project.buildDir
-    baseName = 'impl'
+    baseName = '$implreplace$'
     classifier = "sources"
     duplicatesStrategy = 'exclude'
 
@@ -149,7 +142,7 @@ task implSourceZip(type: Zip) {
         from('java/lib') {
             into 'src'
         }
-        project(':arm:impl').jniHeadersImpl.outputs.each {
+        project(':arm:$implreplace$').jniHeaders$implreplace$.outputs.each {
             from(it) {
                 into 'include'
             }

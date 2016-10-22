@@ -156,15 +156,15 @@ ext.defineWpiLibProperties = {
 }
 
 
-apply from: "impl.gradle"
-apply from: "driver.gradle"
+apply from: "$implreplace$.gradle"
+apply from: "$driverreplace$.gradle"
 
-// Empty task for build so that ntcoreSourceZip and driverSourceZip will be
+// Empty task for build so that ntcoreSourceZip and $driverreplace$SourceZip will be
 // built when running ./gradlew build
 task build
 
-build.dependsOn implSourceZip
-build.dependsOn driverSourceZip
+build.dependsOn $implreplace$SourceZip
+build.dependsOn $driverreplace$SourceZip
 
 task wrapper(type: Wrapper) {
     gradleVersion = '3.0'

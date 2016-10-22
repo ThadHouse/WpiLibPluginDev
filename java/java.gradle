@@ -27,8 +27,8 @@ dependencies {
 }
 
 jar {
-    description = 'Generates Impl jar, with the JNI shared libraries embedded'
-    baseName = 'impl'
+    description = 'Generates $implreplace$ jar, with the JNI shared libraries embedded'
+    baseName = '$implreplace$'
     classifier = "$buildPlatform"
     duplicatesStrategy = 'exclude'
 
@@ -36,37 +36,37 @@ jar {
 }
 
 project.tasks.whenTaskAdded { task ->
-        if (task.name == 'implSharedLibrary') jar.dependsOn task
+        if (task.name == '$implreplace$SharedLibrary') jar.dependsOn task
 }
 
-task ImplJavaSource(type: Jar, dependsOn: classes) {
-    description = 'Generates the source jar for Impl java'
+task $implreplace$JavaSource(type: Jar, dependsOn: classes) {
+    description = 'Generates the source jar for $implreplace$ java'
     group = 'WPILib'
-    baseName = 'impl'
+    baseName = '$implreplace$'
     classifier = "sources"
     duplicatesStrategy = 'exclude'
 
     from sourceSets.main.allJava
 }
 
-task ImplJavadoc(type: Jar, dependsOn: javadoc) {
-    description = 'Generates the javadoc jar for Impl java'
+task $implreplace$Javadoc(type: Jar, dependsOn: javadoc) {
+    description = 'Generates the javadoc jar for $implreplace$ java'
     group = 'WPILib'
-    baseName = 'impl'
+    baseName = '$implreplace$'
     classifier = "javadoc"
     duplicatesStrategy = 'exclude'
 
     from javadoc.destinationDir
 }
 
-build.dependsOn ImplJavaSource
-build.dependsOn ImplJavadoc
+build.dependsOn $implreplace$JavaSource
+build.dependsOn $implreplace$Javadoc
 
 /**
  * Generates the JNI headers
  */
-task jniHeadersImpl {
-    description = 'Generates JNI headers from edu.wpi.first.wpilibj.Impl.*'
+task jniHeaders$implreplace$ {
+    description = 'Generates JNI headers from edu.wpi.first.wpilibj.$implreplace$.*'
     group = 'WPILib'
     def outputFolder = file(generatedJNIHeaderLoc)
     inputs.files sourceSets.main.output
@@ -109,11 +109,11 @@ ext.setupJniIncludes = { binaries ->
             cppCompiler.args '-I', file("${rootDir}/java/arm-linux").absolutePath
             cppCompiler.args '-I', file("${rootDir}/java/arm-linux/linux").absolutePath
 
-            jniHeadersImpl.outputs.files.each { file ->
+            jniHeaders$implreplace$.outputs.files.each { file ->
                 cppCompiler.args '-I', file.getPath()
             }
 
-            dependsOn jniHeadersImpl
+            dependsOn jniHeaders$implreplace$
         }
     }
 }
