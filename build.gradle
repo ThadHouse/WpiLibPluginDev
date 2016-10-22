@@ -86,7 +86,6 @@ task downloadWpilib() {
     }
 
     doLast {
-        println("Do Last")
         copy {
             from armWPILib
             rename 'cpp-root(.+)', 'cpp-root.zip'
