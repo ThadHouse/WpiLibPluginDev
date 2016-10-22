@@ -7,7 +7,7 @@ public class CanTalonJNI {
   static {
     if (!libraryLoaded) {
       try {
-        System.loadLibrary("impl");
+        System.loadLibrary("driver");
       } catch (UnsatisfiedLinkError e) {
         e.printStackTrace();
         System.exit(1);

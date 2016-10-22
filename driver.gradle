@@ -13,6 +13,7 @@ def driverSetupModel = { project ->
                 setupDefines(project, binaries)
                 
                 
+
                 binaries.all {
                 tasks.withType(CppCompile) {
                     addUserLinks(linker, targetPlatform)
@@ -20,14 +21,26 @@ def driverSetupModel = { project ->
                 }
                 }
 
+                if (includeJava) {
+                    project.setupJniIncludes(binaries)
+                }
+
                 sources {
                     cpp {
                         source {
                             srcDirs = ["${rootDir}/driver/src"]
+                            if (includeJava) {
+                                srcDirs "${rootDir}/java/lib"
+                            }
                             includes = ["**/*.cpp"]
                         }
                         exportedHeaders {
                             srcDirs = ["${rootDir}/driver/include", "${rootDir}/libraries/include", wpilibInclude]
+                            if (includeJava) {
+                                project.jniHeadersImpl.outputs.files.each { file ->
+                                    srcDirs file.getPath()
+                                }
+                            }
                             includes = ['**/*.h']
                         }
                     }
@@ -38,20 +51,28 @@ def driverSetupModel = { project ->
 }
 
 
-def driverZipTask = { project ->
-    project.ext.driverZip = project.tasks.create("${project.isArm ? 'arm' : 'native'}driverZip", Zip) {
+def driverZipTask = { pjt ->
+    pjt.ext.driverZip = pjt.tasks.create("${pjt.isArm ? 'arm' : 'native'}driverZip", Zip) {
         description = 'Creates platform-specific zip of the desktop driver libraries.'
         group = 'WPILib'
-        destinationDir = project.buildDir
+        destinationDir = pjt.buildDir
         baseName = 'driver'
-        classifier = "${project.buildPlatform}"
+        classifier = "${pjt.buildPlatform}"
         duplicatesStrategy = 'exclude'
 
         from(file('driver/include')) {
             into 'include'
         }
 
-        project.model {
+        if (!pjt.hasProperty('skipJava')) {
+            pjt.jniHeadersImpl.outputs.each {
+                from(it) {
+                    into 'include'
+                }
+            }
+        }
+
+        pjt.model {
             binaries {
                 withType(StaticLibraryBinarySpec) { binary ->
                     from(binary.staticLibraryFile) {
@@ -65,18 +86,36 @@ def driverZipTask = { project ->
                 }
             }
         }
+
+        from (halSharedLib) {
+            into 'lib'
+        }
+
+        from (halStaticLib) {
+            into 'lib'
+        }
+
+        from(wpiUtilStaticLib) {
+            into 'lib'
+        }
+
+        rename ("libHALAthena_shared.so", "libHALAthena.so")
     }
 
-    project.build.dependsOn project.driverZip
+    pjt.build.dependsOn pjt.driverZip
 
-    def releaseTasks = [project.driverZip]
+    def releaseTasks = [pjt.driverZip]
 
-    project.releaseSetup(releaseTasks)
+    if (includeJava) {
+        releaseTasks.add(pjt.jar)
+    }
 
-    project.tasks.whenTaskAdded { task ->
+    pjt.releaseSetup(releaseTasks)
+
+    pjt.tasks.whenTaskAdded { task ->
         def name = task.name.toLowerCase()
         if (name.contains("driversharedlibrary") || name.contains("driverstaticlibrary")) {
-            project.driverZip.dependsOn task
+            pjt.driverZip.dependsOn task
         }
     }
 }
@@ -85,6 +124,10 @@ project(':arm:driver') {
   apply plugin: 'cpp'
 
   apply from: "${rootDir}/toolchains/arm.gradle"
+
+  if (includeJava) {
+    apply from: "${rootDir}/java/java.gradle"
+  }
 
   driverSetupModel(project)
   driverZipTask(project)
@@ -104,5 +147,16 @@ task driverSourceZip(type: Zip) {
 
     from('driver/include') {
         into 'include'
+    }
+
+    if (includeJava) {
+        from('java/lib') {
+            into 'src'
+        }
+        project(':arm:driver').jniHeadersImpl.outputs.each {
+            from(it) {
+                into 'include'
+            }
+        }
     }
 }
