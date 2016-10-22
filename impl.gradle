@@ -42,7 +42,7 @@ def implSetupModel = { project ->
                             includes = ["**/*.cpp"]
                         }
                         exportedHeaders {
-                            srcDirs = ["${rootDir}/include", "${rootDir}/libraries/include", "${rootDir}/wpilib/include"]
+                            srcDirs = ["${rootDir}/include", "${rootDir}/libraries/include", wpilibInclude]
                             if (includeJava) {
                                 project.jniHeadersImpl.outputs.files.each { file ->
                                     srcDirs file.getPath()
@@ -62,57 +62,102 @@ def implSetupModel = { project ->
     }
 }
 
-def implZipTask = { project ->
-    project.ext.implZip = project.tasks.create("${project.isArm ? 'arm' : 'native'}implZip", Zip) {
+def implZipTask = { pjt ->
+    pjt.ext.implZip = pjt.tasks.create("${pjt.isArm ? 'arm' : 'native'}implZip", Zip) {
         description = 'Creates platform-specific zip of the desktop impl libraries.'
         group = 'WPILib'
-        destinationDir = project.buildDir
+        destinationDir = pjt.buildDir
         baseName = 'impl'
-        classifier = "${project.buildPlatform}"
+        classifier = "${pjt.buildPlatform}"
         duplicatesStrategy = 'exclude'
 
         from(file('include')) {
             into 'include'
         }
 
-        if (!project.hasProperty('skipJava')) {
-            project.jniHeadersImpl.outputs.each {
+        if (!pjt.hasProperty('skipJava')) {
+            pjt.jniHeadersImpl.outputs.each {
                 from(it) {
                     into 'include'
                 }
             }
         }
 
-        project.model {
+        pjt.model {
             binaries {
                 withType(StaticLibraryBinarySpec) { binary ->
                     from(binary.staticLibraryFile) {
-                        into getPlatformPath(binary)
+                        into 'lib'
                     }
                 }
                 withType(SharedLibraryBinarySpec) { binary ->
                     from(binary.sharedLibraryFile) {
-                        into getPlatformPath(binary)
+                        into 'lib'
                     }
                 }
             }
         }
+
+        // Include the static library file and shared library object from driver project
+        def hal = project(':arm:driver')
+        hal.model{
+            binaries{
+                withType(StaticLibraryBinarySpec) { spec ->
+                    spec.headerDirs.each {
+                        from(it) {
+                            into 'include'
+                            // We don't want to include any of the .cpp files that are in some of the header directories
+                            exclude '**/*.cpp'
+                        }
+                    }
+                    from(spec.staticLibraryFile) {
+                        into 'lib'
+                    }
+                }
+                withType(SharedLibraryBinarySpec) { spec ->
+                    from(spec.sharedLibraryFile) {
+                        into 'lib'
+                    }
+                }
+            }
+        }
+
+        from (halSharedLib) {
+            into 'lib'
+        }
+
+        from (halStaticLib) {
+            into 'lib'
+        }
+
+        from(ntcoreSharedLib) {
+            into 'lib'
+        }
+        from(ntcoreStaticLib) {
+            into 'lib'
+        }
+        from(wpiUtilStaticLib) {
+            into 'lib'
+        }
+
+        rename ("libHALAthena_shared.so", "libHALAthena.so")
+        rename ("libntcore_shared.so", "libntcore.so")
     }
 
-    project.build.dependsOn project.implZip
+    pjt.build.dependsOn pjt.implZip
 
-    def releaseTasks = [project.implZip]
+    def releaseTasks = [pjt.implZip]
 
     if (includeJava) {
-        releaseTasks.add(project.jar)
+        releaseTasks.add(pjt.jar)
     }
 
-    project.releaseSetup(releaseTasks)
+    pjt.releaseSetup(releaseTasks)
 
-    project.tasks.whenTaskAdded { task ->
+    pjt.tasks.whenTaskAdded { task ->
         def name = task.name.toLowerCase()
-        if (name.contains("implsharedlibrary") || name.contains("implstaticlibrary") || name.contains("impltest")) {
-            project.implZip.dependsOn task
+        if (name.contains("implsharedlibrary") || name.contains("implstaticlibrary")) {
+            pjt.implZip.dependsOn task
         }
     }
 }
