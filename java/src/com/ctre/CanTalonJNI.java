@@ -2,6 +2,20 @@ package com.ctre;
 
 @SuppressWarnings("MethodName")
 public class CanTalonJNI {
+  static boolean libraryLoaded = false;
+  
+  static {
+    if (!libraryLoaded) {
+      try {
+        System.loadLibrary("impl");
+      } catch (UnsatisfiedLinkError e) {
+        e.printStackTrace();
+        System.exit(1);
+      }
+      libraryLoaded = true;
+    }
+  }
+  
   // Motion Profile status bits
   public static final int kMotionProfileFlag_ActTraj_IsValid = 0x1;
   public static final int kMotionProfileFlag_HasUnderrun = 0x2;

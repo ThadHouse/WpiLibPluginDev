@@ -155,12 +155,44 @@ ext.defineWpiLibProperties = {
   ext.wpilibInclude = "$wpilibUnzipLocation/include"
   ext.wpilibLocation = "$wpilibUnzipLocation/lib"
   ext.wpilibStaticLib = "$wpilibLocation/libwpilib_nonshared.a"
+  ext.halStaticLib = "$wpilibLocation/libHALAthena.a"
+  ext.ntcoreStaticLib = "$wpilibLocation/libntcore.a"
+  ext.wpiUtilStaticLib = "$wpilibLocation/libwpiutil.a"
   
   ext.addWpilibLibraryLinks = { compileTask, linker, targetPlatform ->
     compileTask.dependsOn project(':').unzipWpilib
     String architecture = targetPlatform.architecture
     if (architecture.contains('arm')) {
-      linker.args wpilibStaticLib
+      // Grab all the shared libraries and link them
+            linker.args wpilibStaticLib
+      linker.args halStaticLib
+      linker.args ntcoreStaticLib
+      linker.args wpiUtilStaticLib
+      
+      def libPattern = /.*((\\/|\\).*)+lib(?<libName>.+).so$/
+                def niLibraryArgs = []
+                def niLibraryPath = wpilibLocation
+
+                // The NI Library tree includes all non-wpi libraries, which is everything that doesn't have libwpi in the name
+                def niLibraryTree = fileTree(niLibraryPath)
+                niLibraryTree.include '*.so'
+                niLibraryTree.exclude '*wpi*.so'
+                niLibraryTree.exclude '*_shared.so'
+                
+                
+                // This adds all linker flags to the list of ni library linker flags
+                niLibraryTree.each { lib ->
+                    def nameMatcher = (lib.path =~ libPattern)
+                    if (nameMatcher[0].size() > 1) {
+                        def name = nameMatcher.group('libName')
+                        niLibraryArgs << '-l' + name
+                    }
+                }
+                
+                linker.args << '-L' + niLibraryPath
+                linker.args.addAll(niLibraryArgs)
+      
+
     }
   }
 }
