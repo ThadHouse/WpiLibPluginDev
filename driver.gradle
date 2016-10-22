@@ -4,12 +4,7 @@ def driverSetupModel = { project ->
     project.model {
         components {
             driver(NativeLibrarySpec) {
-                if (project.isArm) {
-                    targetPlatform 'arm'
-                } else {
-                    targetPlatform 'x86'
-                    targetPlatform 'x64'
-                }
+                targetPlatform 'arm'
                 setupDefines(project, binaries)
                 
                 
@@ -52,7 +47,7 @@ def driverSetupModel = { project ->
 
 
 def driverZipTask = { pjt ->
-    pjt.ext.driverZip = pjt.tasks.create("${pjt.isArm ? 'arm' : 'native'}driverZip", Zip) {
+    pjt.ext.driverZip = pjt.tasks.create("armdriverZip", Zip) {
         description = 'Creates platform-specific zip of the desktop driver libraries.'
         group = 'WPILib'
         destinationDir = pjt.buildDir
@@ -76,12 +71,12 @@ def driverZipTask = { pjt ->
             binaries {
                 withType(StaticLibraryBinarySpec) { binary ->
                     from(binary.staticLibraryFile) {
-                        into getPlatformPath(binary)
+                        into 'lib'
                     }
                 }
                 withType(SharedLibraryBinarySpec) { binary ->
                     from(binary.sharedLibraryFile) {
-                        into getPlatformPath(binary)
+                        into 'lib'
                     }
                 }
             }

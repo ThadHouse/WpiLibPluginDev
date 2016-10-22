@@ -4,12 +4,7 @@ def implSetupModel = { project ->
     project.model {
         components {
             impl(NativeLibrarySpec) {
-                if (project.isArm) {
-                    targetPlatform 'arm'
-                } else {
-                    targetPlatform 'x86'
-                    targetPlatform 'x64'
-                }
+                targetPlatform 'arm'
                 setupDefines(project, binaries)
                 
                 
@@ -30,11 +25,7 @@ def implSetupModel = { project ->
                             srcDirs = ["${rootDir}/include", "${rootDir}/libraries/include", wpilibInclude]
                             includes = ['**/*.h']
                         }
-                        if (project.isArm) {
-                            lib project: ':arm:driver', library: 'driver', linkage: 'static'
-                        } else {
-                            lib project: ':native:driver', library: 'driver', linkage: 'static'
-                        }
+                        lib project: ':arm:driver', library: 'driver', linkage: 'static'
                     }
                 }
             }
@@ -43,7 +34,7 @@ def implSetupModel = { project ->
 }
 
 def implZipTask = { pjt ->
-    pjt.ext.implZip = pjt.tasks.create("${pjt.isArm ? 'arm' : 'native'}implZip", Zip) {
+    pjt.ext.implZip = pjt.tasks.create("armimplZip", Zip) {
         description = 'Creates platform-specific zip of the desktop impl libraries.'
         group = 'WPILib'
         destinationDir = pjt.buildDir
