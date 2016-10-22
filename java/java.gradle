@@ -36,12 +36,7 @@ jar {
 }
 
 project.tasks.whenTaskAdded { task ->
-    if (isArm) {
         if (task.name == 'implSharedLibrary') jar.dependsOn task
-    } else {
-        if (task.name == 'implX64SharedLibrary' || task.name == 'implX86SharedLibrary')
-            jar.dependsOn task
-    }
 }
 
 task ImplJavaSource(type: Jar, dependsOn: classes) {
@@ -111,35 +106,11 @@ ext.setupJniIncludes = { binaries ->
     }
     binaries.all {
         tasks.withType(CppCompile) {
-            if (buildPlatform == 'arm') {
-                cppCompiler.args '-I', file("${rootDir}/java/arm-linux").absolutePath
-                cppCompiler.args '-I', file("${rootDir}/java/arm-linux/linux").absolutePath
-            } else {
-                def jdkLocation = org.gradle.internal.jvm.Jvm.current().javaHome
-                platformSpecificIncludeFlag("${jdkLocation}/include", cppCompiler)
-
-                if (targetPlatform.operatingSystem.macOsX) {
-                    platformSpecificIncludeFlag("${jdkLocation}/include/darwin", cppCompiler)
-                } else if (targetPlatform.operatingSystem.linux) {
-                    platformSpecificIncludeFlag("${jdkLocation}/include/linux", cppCompiler)
-                } else if (targetPlatform.operatingSystem.windows) {
-                    platformSpecificIncludeFlag("${jdkLocation}/include/win32", cppCompiler)
-                } else if (targetPlatform.operatingSystem.freeBSD) {
-                    platformSpecificIncludeFlag("${jdkLocation}/include/freebsd", cppCompiler)
-                } else if (file("$jdkLocation/include/darwin").exists()) {
-                    // TODO: As of Gradle 2.8, targetPlatform.operatingSystem.macOsX returns false
-                    // on El Capitan. We therefore manually test for the darwin folder and include it
-                    // if it exists
-                    platformSpecificIncludeFlag("${jdkLocation}/include/darwin", cppCompiler)
-                }
-            }
+            cppCompiler.args '-I', file("${rootDir}/java/arm-linux").absolutePath
+            cppCompiler.args '-I', file("${rootDir}/java/arm-linux/linux").absolutePath
 
             jniHeadersImpl.outputs.files.each { file ->
-                if (buildPlatform == 'arm') {
-                    cppCompiler.args '-I', file.getPath()
-                } else {
-                    platformSpecificIncludeFlag(file.getPath(), cppCompiler)
-                }
+                cppCompiler.args '-I', file.getPath()
             }
 
             dependsOn jniHeadersImpl

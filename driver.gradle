@@ -81,28 +81,13 @@ def driverZipTask = { project ->
     }
 }
 
-if (buildArm) {
-    project(':arm:driver') {
-        apply plugin: 'cpp'
+project(':arm:driver') {
+  apply plugin: 'cpp'
 
-        apply from: "${rootDir}/toolchains/arm.gradle"
-        
-        
+  apply from: "${rootDir}/toolchains/arm.gradle"
 
-        driverSetupModel(project)
-        driverZipTask(project)
-    }
-}
-
-if (buildDesktop) {
-  project(':native:driver') {
-      apply plugin: 'cpp'
-
-      apply from: "${rootDir}/toolchains/native.gradle"
-
-      driverSetupModel(project)
-      driverZipTask(project)
-  }
+  driverSetupModel(project)
+  driverZipTask(project)
 }
 
 task driverSourceZip(type: Zip) {

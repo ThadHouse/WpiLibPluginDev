@@ -18,37 +18,12 @@ if (!hasProperty('repo')) {
     }
 }
 
-ext.buildDesktop =project.hasProperty('desktop')
-ext.buildArm = !project.hasProperty('skipArm')
 ext.includeJava = !project.hasProperty('skipJava')
 
-if (hasProperty('makeDesktop')) {
-    println 'Making desktop classifier jar. NOTE: This desktop version should only be used for local testing.' +
-            'It will only support the current platform, and will override fetching the latest development version from' +
-            ' the maven repo until you manually delete it!'
-}
 
 ext.getPlatformPath = { binary ->
     if (binary.targetPlatform.architecture.arm) {
         return 'Linux/arm'
-    } else if (binary.targetPlatform.operatingSystem.linux) {
-        if (binary.targetPlatform.architecture.amd64) {
-            return 'Linux/amd64'
-        } else {
-            return 'Linux/' + binary.targetPlatform.architecture.name
-        }
-    } else if (binary.targetPlatform.operatingSystem.windows) {
-        if (binary.targetPlatform.architecture.amd64) {
-            return 'Windows/amd64'
-        } else {
-            return 'Windows/' + binary.targetPlatform.architecture.name
-        }
-    } else if (binary.targetPlatform.operatingSystem.macOsX) {
-        if (binary.targetPlatform.architecture.amd64) {
-            return 'Mac OS X/x86_64'
-        } else {
-            return 'Mac OS X/' + binary.targetPlatform.architecture.name
-        }
     } else {
         return binary.targetPlatform.operatingSystem.name + '/' + binary.targetPlatform.architecture.name
     }
@@ -61,57 +36,49 @@ ext.setupDefines = { project, binaries ->
 	} else {
 	    project.setupReleaseDefines(cppCompiler, linker)
 	}
-    }
+  }
 }
+
+
 
 ext.addUserLinks = { linker, targetPlatform ->
   def libPattern = /.*((\\/|\\).*)+lib(?<libName>.+).so$/
-                def niLibraryArgs = []
-                def niLibraryPath = file('libraries').path
+  def libraryArgs = []
+  def libraryPath = file('libraries').path
 
-                // The NI Library tree includes all non-wpi libraries, which is everything that doesn't have libwpi in the name
-                def niLibraryTree = fileTree(niLibraryPath)
-                niLibraryTree.include '*.so'
-                niLibraryTree.exclude '*wpi*.so'
-                
-                // This adds all linker flags to the list of ni library linker flags
-                niLibraryTree.each { lib ->
-                    def nameMatcher = (lib.path =~ libPattern)
-                    if (nameMatcher[0].size() > 1) {
-                        def name = nameMatcher.group('libName')
-                        niLibraryArgs << '-l' + name
-                    }
-                }
+  // adds all libraries found in the user folder
+  def libraryTree = fileTree(libraryPath)
+  libraryTree.include '*.so'
+  libraryTree.include '*.a'
 
-            String architecture = targetPlatform.architecture
-            if (architecture.contains('arm')){
-                linker.args << '-L' + niLibraryPath
-                linker.args.addAll(niLibraryArgs)
-            }
-        }
+  libraryTree.each { lib ->
+    def nameMatcher = (lib.path =~ libPattern)
+    if (nameMatcher[0].size() > 1) {
+      def name = nameMatcher.group('libName')
+      libraryArgs << '-l' + name
+    }
+  }
 
-ext.addWpiLibLink = { linker, targetPlatform ->
-    def niLibraryPath = file('wpilib').path
-    def libLoc = "$niLibraryPath/lib/libwpilib_nonshared.a"
-    
-    linker.args libLoc
+  String architecture = targetPlatform.architecture
+  if (architecture.contains('arm')){
+    linker.args << '-L' + libraryPath
+    linker.args.addAll(libraryArgs)
+  }
 }
 
 def wpilibUnzipLocation = "$buildDir/wpilib"
 
 task downloadWpilib() {
-    description = 'Downloads the C++ ARM wpiutil maven dependency.'
+    description = 'Downloads the C++ ARM wpilib maven dependency.'
 
     group = 'WPILib'
     def depFolder = "$buildDir/dependencies"
-    def utilZip = file("$depFolder/cpp-root.zip")
-    outputs.file(utilZip)
+    def libZip = file("$depFolder/cpp-root.zip")
+    outputs.file(libZip)
     def armWPILib
     
-    println("WPILib download")
 
     doFirst {
-        println("Do First")
         def armWpiUtilDependency = project.dependencies.create("edu.wpi.first.wpilib.cmake:cpp-root:+")
         def armWpiUtilConfig = project.configurations.detachedConfiguration(armWpiUtilDependency)
         armWpiUtilConfig.setTransitive(false)
@@ -128,19 +95,13 @@ task downloadWpilib() {
     }
 }
 
-// Create a task that will unzip the wpiutil files into a temporary build directory
+// Create a task that will unzip the wpilib files into a temporary build directory
 task unzipWpilib(type: Copy) {
-    description = 'Unzips the wpiutil maven dependency so that the include files and libraries can be used'
+    description = 'Unzips the wpilib maven dependency so that the include files and libraries can be used'
     group = 'WPILib'
     dependsOn downloadWpilib
-    println("unzip")
-    println(wpilibUnzipLocation)
     
-    def f = downloadWpilib.outputs.files.singleFile
-    
-    println(f)
-
-    from zipTree(f)
+    from zipTree(downloadWpilib.outputs.files.singleFile)
     into wpilibUnzipLocation
 }
 
@@ -164,34 +125,32 @@ ext.defineWpiLibProperties = {
     String architecture = targetPlatform.architecture
     if (architecture.contains('arm')) {
       // Grab all the shared libraries and link them
-            linker.args wpilibStaticLib
+      linker.args wpilibStaticLib
       linker.args halStaticLib
       linker.args ntcoreStaticLib
       linker.args wpiUtilStaticLib
-      
+            
       def libPattern = /.*((\\/|\\).*)+lib(?<libName>.+).so$/
-                def niLibraryArgs = []
-                def niLibraryPath = wpilibLocation
+      def libraryArgs = []
+      def libraryPath = wpilibLocation
 
-                // The NI Library tree includes all non-wpi libraries, which is everything that doesn't have libwpi in the name
-                def niLibraryTree = fileTree(niLibraryPath)
-                niLibraryTree.include '*.so'
-                niLibraryTree.exclude '*wpi*.so'
-                niLibraryTree.exclude '*_shared.so'
-                
-                
-                // This adds all linker flags to the list of ni library linker flags
-                niLibraryTree.each { lib ->
-                    def nameMatcher = (lib.path =~ libPattern)
-                    if (nameMatcher[0].size() > 1) {
-                        def name = nameMatcher.group('libName')
-                        niLibraryArgs << '-l' + name
-                    }
-                }
-                
-                linker.args << '-L' + niLibraryPath
-                linker.args.addAll(niLibraryArgs)
-      
+      def libraryTree = fileTree(libraryPath)
+      libraryTree.include '*.so'
+      libraryTree.exclude '*wpi*.so'
+      libraryTree.exclude '*_shared.so'
+
+
+      // Adds all WPILib libraries
+      libraryTree.each { lib ->
+        def nameMatcher = (lib.path =~ libPattern)
+        if (nameMatcher[0].size() > 1) {
+          def name = nameMatcher.group('libName')
+          libraryArgs << '-l' + name
+        }
+      }
+
+      linker.args << '-L' + libraryPath
+      linker.args.addAll(libraryArgs)
 
     }
   }
@@ -207,8 +166,6 @@ task build
 
 build.dependsOn implSourceZip
 build.dependsOn driverSourceZip
-
-//apply from: 'publish.gradle'
 
 task wrapper(type: Wrapper) {
     gradleVersion = '3.0'
