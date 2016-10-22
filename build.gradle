@@ -121,15 +121,15 @@ ext.defineWpiLibProperties = {
   ext.ntcoreStaticLib = "$wpilibLocation/libntcore.a"
   ext.wpiUtilStaticLib = "$wpilibLocation/libwpiutil.a"
   
-  ext.addWpilibLibraryLinks = { compileTask, linker, targetPlatform, addNtCore ->
+  ext.addWpilibLibraryLinks = { compileTask, linker, targetPlatform, fullWPILib ->
     compileTask.dependsOn project(':').unzipWpilib
     String architecture = targetPlatform.architecture
     if (architecture.contains('arm')) {
       // Grab all the shared libraries and link them
-      linker.args wpilibStaticLib
       linker.args halStaticLib
-      if (addNtCore) {
+      if (fullWPILib) {
             linker.args ntcoreStaticLib
+            linker.args wpilibStaticLib
       }
       linker.args wpiUtilStaticLib
             
