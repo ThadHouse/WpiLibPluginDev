@@ -12,7 +12,7 @@ def driverSetupModel = { project ->
                 binaries.all {
                 tasks.withType(CppCompile) {
                     addUserLinks(linker, targetPlatform)
-                    addWpilibLibraryLinks(it, linker, targetPlatform)
+                    addWpilibLibraryLinks(it, linker, targetPlatform, false)
                 }
                 }
 
