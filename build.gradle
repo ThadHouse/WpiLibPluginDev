@@ -18,6 +18,7 @@ if (!hasProperty('repo')) {
     }
 }
 
+ext.buildDesktop =project.hasProperty('desktop')
 ext.buildArm = !project.hasProperty('skipArm')
 ext.includeJava = !project.hasProperty('skipJava')
 
@@ -63,11 +64,103 @@ ext.setupDefines = { project, binaries ->
     }
 }
 
-ext.addLinks = { project, binaries, linker, targetPlatform, path, args ->
-            binaries.all {
-            project.addLibraryLinks(linker, targetPlatform, path,args)
+ext.addUserLinks = { linker, targetPlatform ->
+  def libPattern = /.*((\\/|\\).*)+lib(?<libName>.+).so$/
+                def niLibraryArgs = []
+                def niLibraryPath = file('libraries').path
+
+                // The NI Library tree includes all non-wpi libraries, which is everything that doesn't have libwpi in the name
+                def niLibraryTree = fileTree(niLibraryPath)
+                niLibraryTree.include '*.so'
+                niLibraryTree.exclude '*wpi*.so'
+                
+                // This adds all linker flags to the list of ni library linker flags
+                niLibraryTree.each { lib ->
+                    def nameMatcher = (lib.path =~ libPattern)
+                    if (nameMatcher[0].size() > 1) {
+                        def name = nameMatcher.group('libName')
+                        niLibraryArgs << '-l' + name
+                    }
+                }
+
+            String architecture = targetPlatform.architecture
+            if (architecture.contains('arm')){
+                linker.args << '-L' + niLibraryPath
+                linker.args.addAll(niLibraryArgs)
+            }
         }
+
+ext.addWpiLibLink = { linker, targetPlatform ->
+    def niLibraryPath = file('wpilib').path
+    def libLoc = "$niLibraryPath/lib/libwpilib_nonshared.a"
+    
+    linker.args libLoc
+}
+
+def wpilibUnzipLocation = "$buildDir/wpilib"
+
+task downloadWpilib() {
+    description = 'Downloads the C++ ARM wpiutil maven dependency.'
+
+    group = 'WPILib'
+    def depFolder = "$buildDir/dependencies"
+    def utilZip = file("$depFolder/cpp-root.zip")
+    outputs.file(utilZip)
+    def armWPILib
+
+    doFirst {
+        def armWpiUtilDependency = project.dependencies.create("edu.wpi.first.wpilib.cmake:cpp-root:+")
+        def armWpiUtilConfig = project.configurations.detachedConfiguration(armWpiUtilDependency)
+        armWpiUtilConfig.setTransitive(false)
+        armWPILib = armWpiUtilConfig.files[0].canonicalFile
+    }
+
+    doLast {
+        copy {
+            from armWPILib
+            rename 'cpp-root(.+)', 'cpp-root.zip'
+            into depFolder
         }
+    }
+}
+
+// Create a task that will unzip the wpiutil files into a temporary build directory
+task unzipWpilib(type: Copy) {
+    description = 'Unzips the wpiutil maven dependency so that the include files and libraries can be used'
+    group = 'WPILib'
+    dependsOn downloadWpilib
+    println("unzip")
+    println(wpilibUnzipLocation)
+    
+    def f = downloadWpilib.outputs.files.singleFile
+    
+    println(f)
+
+    from zipTree(f)
+    into wpilibUnzipLocation
+}
+
+task clean(type: Delete) {
+    description = "Deletes the build directory"
+    group = "Build"
+    delete buildDir
+}
+
+ext.defineWpiLibProperties = {
+  ext.wpilib = wpilibUnzipLocation
+  ext.wpilibInclude = "$wpilibUnzipLocation/include"
+  ext.wpilibLocation = "$wpilibUnzipLocation/lib"
+  ext.wpilibStaticLib = "$wpilibLocation/libwpilib_nonshared.a"
+  
+  ext.addWpilibLibraryLinks = { compileTask, linker, targetPlatform ->
+    compileTask.dependsOn project(':').unzipWpilib
+    String architecture = targetPlatform.architecture
+    if (architecture.contains('arm')) {
+      linker.args wpilibStaticLib
+    }
+  }
+}
+
 
 apply from: "impl.gradle"
 apply from: "driver.gradle"

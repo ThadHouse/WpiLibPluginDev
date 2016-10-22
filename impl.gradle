@@ -1,3 +1,5 @@
+defineWpiLibProperties()
+
 def implSetupModel = { project ->
     project.model {
         components {
@@ -10,26 +12,13 @@ def implSetupModel = { project ->
                 }
                 setupDefines(project, binaries)
                 
-                def libPattern = /.*((\\/|\\).*)+lib(?<libName>.+).so$/
-                def niLibraryArgs = []
-                def niLibraryPath = file('libraries').path
-
-                // The NI Library tree includes all non-wpi libraries, which is everything that doesn't have libwpi in the name
-                def niLibraryTree = fileTree(niLibraryPath)
-                niLibraryTree.include '*.so'
-                niLibraryTree.exclude '*wpi*.so'
                 
-                // This adds all linker flags to the list of ni library linker flags
-                niLibraryTree.each { lib ->
-                    def nameMatcher = (lib.path =~ libPattern)
-                    if (nameMatcher[0].size() > 1) {
-                        def name = nameMatcher.group('libName')
-                        niLibraryArgs << '-l' + name
-                    }
-                }
-                
+                                binaries.all {
                 tasks.withType(CppCompile) {
-                    addLinks(project, binaries, linker, targetPlatform, niLibraryPath, niLibraryArgs)
+                    addUserLinks(linker, targetPlatform)
+                    addWpilibLibraryLinks(it, linker, targetPlatform)
+                    //addWpiLibLink(linker, targetPlatform)
+                }
                 }
 
                 if (includeJava) {
@@ -50,10 +39,10 @@ def implSetupModel = { project ->
                             if (includeJava) {
                                 srcDirs "${rootDir}/java/lib"
                             }
-                            includes = ['**/*.cpp']
+                            includes = ["**/*.cpp"]
                         }
                         exportedHeaders {
-                            srcDirs = ["${rootDir}/include", "${rootDir}/libraries/include"]
+                            srcDirs = ["${rootDir}/include", "${rootDir}/libraries/include", "${rootDir}/wpilib/include"]
                             if (includeJava) {
                                 project.jniHeadersImpl.outputs.files.each { file ->
                                     srcDirs file.getPath()
@@ -142,17 +131,19 @@ if (buildArm) {
     }
 }
 
-project(':native:impl') {
-    apply plugin: 'cpp'
+if (buildDesktop) {
+  project(':native:impl') {
+      apply plugin: 'cpp'
 
-    apply from: "${rootDir}/toolchains/native.gradle"
+      apply from: "${rootDir}/toolchains/native.gradle"
 
-    if (includeJava) {
-        apply from: "${rootDir}/java/java.gradle"
-    }
+      if (includeJava) {
+          apply from: "${rootDir}/java/java.gradle"
+      }
 
-    implSetupModel(project)
-    implZipTask(project)
+      implSetupModel(project)
+      implZipTask(project)
+  }
 }
 
 task implSourceZip(type: Zip) {
@@ -175,8 +166,7 @@ task implSourceZip(type: Zip) {
         from('java/lib') {
             into 'src'
         }
-
-        project(':native:impl').jniHeadersImpl.outputs.each {
+        project(':arm:impl').jniHeadersImpl.outputs.each {
             from(it) {
                 into 'include'
             }

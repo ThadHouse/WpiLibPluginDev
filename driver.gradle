@@ -1,3 +1,5 @@
+
+
 def driverSetupModel = { project ->
     project.model {
         components {
@@ -10,36 +12,22 @@ def driverSetupModel = { project ->
                 }
                 setupDefines(project, binaries)
                 
-                def libPattern = /.*((\\/|\\).*)+lib(?<libName>.+).so$/
-                def niLibraryArgs = []
-                def niLibraryPath = file('libraries').path
-
-                // The NI Library tree includes all non-wpi libraries, which is everything that doesn't have libwpi in the name
-                def niLibraryTree = fileTree(niLibraryPath)
-                niLibraryTree.include '*.so'
-                niLibraryTree.exclude '*wpi*.so'
                 
-                // This adds all linker flags to the list of ni library linker flags
-                niLibraryTree.each { lib ->
-                    def nameMatcher = (lib.path =~ libPattern)
-                    if (nameMatcher[0].size() > 1) {
-                        def name = nameMatcher.group('libName')
-                        niLibraryArgs << '-l' + name
-                    }
-                }
-                
+                binaries.all {
                 tasks.withType(CppCompile) {
-                    addLinks(project, binaries, linker, targetPlatform, niLibraryPath, niLibraryArgs)
+                    addUserLinks(linker, targetPlatform)
+                    addWpiLibLink(linker, targetPlatform)
+                }
                 }
 
                 sources {
                     cpp {
                         source {
                             srcDirs = ["${rootDir}/driver/src"]
-                            includes = ['**/*.cpp']
+                            includes = ["**/*.cpp"]
                         }
                         exportedHeaders {
-                            srcDirs = ["${rootDir}/driver/include", "${rootDir}/libraries/include"]
+                            srcDirs = ["${rootDir}/driver/include", "${rootDir}/libraries/include", wpilibInclude]
                             includes = ['**/*.h']
                         }
                     }
@@ -106,13 +94,15 @@ if (buildArm) {
     }
 }
 
-project(':native:driver') {
-    apply plugin: 'cpp'
+if (buildDesktop) {
+  project(':native:driver') {
+      apply plugin: 'cpp'
 
-    apply from: "${rootDir}/toolchains/native.gradle"
+      apply from: "${rootDir}/toolchains/native.gradle"
 
-    driverSetupModel(project)
-    driverZipTask(project)
+      driverSetupModel(project)
+      driverZipTask(project)
+  }
 }
 
 task driverSourceZip(type: Zip) {
