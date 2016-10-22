@@ -107,8 +107,11 @@ task downloadWpilib() {
     def utilZip = file("$depFolder/cpp-root.zip")
     outputs.file(utilZip)
     def armWPILib
+    
+    println("WPILib download")
 
     doFirst {
+        println("Do First")
         def armWpiUtilDependency = project.dependencies.create("edu.wpi.first.wpilib.cmake:cpp-root:+")
         def armWpiUtilConfig = project.configurations.detachedConfiguration(armWpiUtilDependency)
         armWpiUtilConfig.setTransitive(false)
@@ -116,6 +119,7 @@ task downloadWpilib() {
     }
 
     doLast {
+        println("Do Last")
         copy {
             from armWPILib
             rename 'cpp-root(.+)', 'cpp-root.zip'

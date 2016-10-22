@@ -1,4 +1,4 @@
-
+defineWpiLibProperties()
 
 def driverSetupModel = { project ->
     project.model {
@@ -16,7 +16,7 @@ def driverSetupModel = { project ->
                 binaries.all {
                 tasks.withType(CppCompile) {
                     addUserLinks(linker, targetPlatform)
-                    addWpiLibLink(linker, targetPlatform)
+                    addWpilibLibraryLinks(it, linker, targetPlatform)
                 }
                 }
 
